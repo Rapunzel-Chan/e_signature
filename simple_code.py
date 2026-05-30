@@ -6,6 +6,67 @@
 
 import math
 import random
+import secrets
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from dataclasses import dataclass
+from typing import Optional, Tuple
+
+# ============================================================================
+# МЕТАДАННЫЕ ПОДПИСИ (автор, дата, срок действия)
+# ============================================================================
+
+@dataclass
+class SignatureMetadata:
+    """Метаданные подписи"""
+    author: str  # автор подписи
+    created_at: str  # дата и время создания
+    expires_at: str  # срок действия (опционально)
+    purpose: str  # назначение подписи (опционально)
+
+    @classmethod
+    def create(cls, author: str, validity_days: int = 365) -> 'SignatureMetadata':
+        """Создает метаданные с текущей датой и сроком действия"""
+        now = datetime.now()
+        expires = now + timedelta(days=validity_days)
+
+        return cls(
+            author=author,
+            created_at=now.strftime("%Y-%m-%d %H:%M:%S"),
+            expires_at=expires.strftime("%Y-%m-%d %H:%M:%S"),
+            purpose="Электронная цифровая подпись по ГОСТ Р 34.10-2012"
+        )
+
+    def to_bytes(self) -> bytes:
+        """Преобразует метаданные в байты для подписи"""
+        data = f"AUTHOR:{self.author}\n"
+        data += f"CREATED:{self.created_at}\n"
+        data += f"EXPIRES:{self.expires_at}\n"
+        data += f"PURPOSE:{self.purpose}\n"
+        data += f"END_METADATA\n"
+        return data.encode('utf-8')
+
+    def to_readable(self) -> str:
+        """Возвращает читаемый вид метаданных (без псевдографики для совместимости)"""
+        return f"""
+    {'=' * 60}
+    ИНФОРМАЦИЯ О ПОДПИСИ
+    {'=' * 60}
+      Автор: {self.author}
+      Создана: {self.created_at}
+      Действительна до: {self.expires_at}
+      Назначение: {self.purpose}
+    {'=' * 60}
+    """
+
+    def is_valid(self) -> bool:
+        """Проверяет, не истёк ли срок действия подписи"""
+        now = datetime.now()
+        try:
+            expires = datetime.strptime(self.expires_at, "%Y-%m-%d %H:%M:%S")
+            return now <= expires
+        except:
+            return True
 
 
 class ModularArithmetic:
@@ -18,7 +79,6 @@ class ModularArithmetic:
         Вход: a, b (a ≥ b > 0)
         Выход: (d, x, y) где d = НОД(a,b), a·x + b·y = d
 
-        ПО ФОРМУЛЕ ИЗ МЕТОДИЧКИ (стр. 7-8):
         - Подаем на вход (n, a) для нахождения a⁻¹ mod n
         - Возвращаем y₂ как обратный элемент
         """
@@ -54,19 +114,112 @@ class ModularArithmetic:
 
     @staticmethod
     def mod_pow(base: int, exp: int, mod: int) -> int:
-        """Быстрое возведение в степень по модулю"""
+        """
+        Быстрое возведение в степень по модулю (бинарный метод).
+
+        Вход: a = base, k = exp, n = mod
+        Выход: a^k mod n
+
+        Математическая формула:
+            a^k = a^{k_0·2^0 + k_1·2^1 + ... + k_t·2^t} = ∏_{i=0}^{t} (a^{2^i})^{k_i}
+
+        Алгоритм (пошагово):
+            1. b = 1
+            2. A = a mod n
+            3. Если младший бит k равен 1, то b = A
+            4. Для каждого следующего бита k (i = 1..t):
+               4.1. A = A² mod n      # вычисляем a^(2^i) mod n
+               4.2. Если i-й бит k равен 1, то b = (b · A) mod n
+            5. Возвращаем b
+        """
+        # Шаг 1: b ← 1
+        # b — накопитель результата, изначально равен 1
         result = 1
-        base = base % mod
+
+        # Шаг 2: A ← a
+        # Приводим основание к модулю n для уменьшения чисел
+        A = base % mod
+
+        # Сохраняем исходную степень для вывода (только для демонстрации)
+        k = exp
+
+        print(f"\n  Вычисление: {base}^{exp} mod {mod}")
+        print(f"  Двоичное представление exp = {exp} = {bin(exp)[2:]}")
+        print(f"  A₀ = {base} mod {mod} = {A}")
+
+        i = 0  # номер текущего бита
+        step = 1
+
+        # Шаг 3: Если k₀ = 1, то b ← A
+        # Проверяем младший бит (k₀)
+        if exp & 1:
+            result = A
+            print(f"\n  Шаг {step}: бит {i} = 1 → result = {result}")
+        else:
+            print(f"\n  Шаг {step}: бит {i} = 0 → пропускаем")
+        step += 1
+
+        # Сдвигаем exp вправо, чтобы обработать следующий бит
+        exp >>= 1
+        i += 1
+
+        # Шаг 4: Для i = 1..t
         while exp > 0:
+            # Шаг 4.1: A ← A² mod n
+            # Формула: a^(2^i) = (a^(2^{i-1}))² mod n
+            A = (A * A) % mod
+            print(f"\n  Шаг {step}.1: A = A² mod n = {A}")
+
+            # Шаг 4.2: Если kᵢ = 1, то b ← (A · b) mod n
             if exp & 1:
-                result = (result * base) % mod
-            base = (base * base) % mod
+                result = (result * A) % mod
+                print(f"  Шаг {step}.2: бит {i} = 1 → result = result × A = {result}")
+            else:
+                print(f"  Шаг {step}.2: бит {i} = 0 → пропускаем")
+
             exp >>= 1
+            i += 1
+            step += 1
+
+        print(f"\n  Результат: {base}^{k} mod {mod} = {result}")
         return result
+    # @staticmethod
+    # def mod_pow(base: int, exp: int, mod: int) -> int:
+    #     """Быстрое возведение в степень по модулю"""
+    #     result = 1
+    #     base = base % mod
+    #     while exp > 0:
+    #         if exp & 1:
+    #             result = (result * base) % mod
+    #         base = (base * base) % mod
+    #         exp >>= 1
+    #     return result
 
     @staticmethod
-    def is_prime(n: int, k: int = 10) -> bool:
-        """Тест Ферма на простоту (раздел 2.4.3)"""
+    def is_prime(n: int, k: int = 40) -> bool:
+        """
+        Тест Миллера-Рабина на простоту.
+
+        Математическая основа (малая теорема Ферма):
+        Если n простое, то для любого a: a^(n-1) ≡ 1 (mod n)
+
+        Алгоритм (по ГОСТ Р 34.10-2012, раздел 2.4.3):
+        1. Если n < 2 → составное
+        2. Если n = 2 или 3 → простое
+        3. Если n чётное → составное
+        4. Представляем n-1 = 2^s * d, где d нечётное
+        5. Для k раундов:
+           a = случайное (2 ≤ a ≤ n-2)
+           x = a^d mod n
+           Если x = 1 или x = n-1 → следующий раунд
+           Для j = 1..s-1:
+               x = x² mod n
+               Если x = n-1 → следующий раунд
+           Если ни разу не получили n-1 → n составное
+        6. n вероятно простое
+
+        Вероятность ошибки: 2^(-k), для k=40 → 2^(-80) ≈ 0
+        """
         if n <= 1:
             return False
         if n <= 3:
@@ -74,13 +227,30 @@ class ModularArithmetic:
         if n % 2 == 0:
             return False
 
-        # Для маленьких чисел используем безопасный диапазон
-        # randint(2, n-1) всегда корректен при n>3
+        # Шаг 4: представляем n-1 = 2^s * d
+        s = 0
+        d = n - 1
+        while d % 2 == 0:
+            d //= 2
+            s += 1
+
+        # Шаг 5: k раундов
         for _ in range(k):
-            a = random.randint(2, n - 2)
-            if pow(a, n - 1, n) != 1:
-                return False
-        return True
+            # secrets.randbelow безопасен для криптографии
+            a = secrets.randbelow(n - 3) + 2
+            x = pow(a, d, n)
+
+            if x == 1 or x == n - 1:
+                continue
+
+            for _ in range(s - 1):
+                x = pow(x, 2, n)
+                if x == n - 1:
+                    break
+            else:
+                return False  # n составное
+
+        return True  # n вероятно простое
 
 
 class HasseTheorem:
@@ -146,12 +316,12 @@ class BinaryVector:
     @staticmethod
     def bytes_to_int(data: bytes) -> int:
         """Преобразует байтовый хэш в целое число"""
-        return int.from_bytes(data, 'big')
+        return int.from_bytes(data, 'little')
 
     @staticmethod
     def int_to_bytes(n: int, length: int) -> bytes:
         """Преобразует целое число в байты"""
-        return n.to_bytes(length, 'big')
+        return n.to_bytes(length, 'little')
 
     @staticmethod
     def concat(r_bits: str, s_bits: str) -> str:
@@ -456,7 +626,7 @@ class Streebog:
             )
 
     def hash_to_int(self, message: bytes) -> int:
-        return int.from_bytes(self.hash(message), 'big')
+        return int.from_bytes(self.hash(message), 'little')
 
     def hash_to_bits(self, message: bytes) -> str:
         return bin(self.hash_to_int(message))[2:].zfill(self.digest_size)
@@ -532,6 +702,97 @@ class GOSTSignature:
         print(f"  Длина хэша: {hash_len} бит")
         print(f"  Длина подписи: {self.component_bits * 2} бит")
 
+    def sign_with_metadata(self, data: bytes, d: int, author: str,
+                           validity_days: int = 365, verbose: bool = True) -> Tuple[int, int, SignatureMetadata]:
+        """
+        Формирование подписи с метаданными (автор, дата, срок действия)
+
+        Вход:
+            data: исходные данные (файл/сообщение)
+            d: секретный ключ
+            author: имя автора подписи
+            validity_days: срок действия в днях (по умолчанию 365)
+
+        Выход:
+            (r, s, metadata) - подпись и метаданные
+        """
+        # Создаём метаданные
+        metadata = SignatureMetadata.create(author, validity_days)
+
+        # Формируем сообщение: метаданные + разделитель + данные
+        metadata_bytes = metadata.to_bytes()
+        separator = b"\n---SIGNED_DATA---\n"
+
+        full_message = metadata_bytes + separator + data
+
+        if verbose:
+            print(metadata.to_readable())
+            print(f"Подписываем данные: {len(full_message)} байт (включая метаданные)")
+
+        # Подписываем полное сообщение
+        r, s, r_bits, s_bits, signature_bits = self.sign(full_message, d, verbose)
+
+        return r, s, metadata
+
+    def verify_with_metadata(self, data: bytes, r: int, s: int, Q: Point,
+                             verbose: bool = True) -> Tuple[bool, Optional[SignatureMetadata]]:
+        """
+        Проверка подписи с извлечением метаданных
+
+        Возвращает:
+            (is_valid, metadata) - результат проверки и извлечённые метаданные
+        """
+        if verbose:
+            print(f"\n{'=' * 60}")
+            print(f"ПРОВЕРКА ПОДПИСИ С МЕТАДАННЫМИ")
+            print(f"{'=' * 60}")
+
+        # Пробуем извлечь метаданные из начала данных
+        metadata = None
+        separator = b"\n---SIGNED_DATA---\n"
+
+        if separator in data:
+            metadata_part, actual_data = data.split(separator, 1)
+
+            # Парсим метаданные
+            try:
+                meta_str = metadata_part.decode('utf-8')
+                meta_dict = {}
+                for line in meta_str.strip().split('\n'):
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        meta_dict[key.strip()] = value.strip()
+
+                if 'AUTHOR' in meta_dict:
+                    metadata = SignatureMetadata(
+                        author=meta_dict.get('AUTHOR', 'Unknown'),
+                        created_at=meta_dict.get('CREATED', 'Unknown'),
+                        expires_at=meta_dict.get('EXPIRES', 'Unknown'),
+                        purpose=meta_dict.get('PURPOSE', 'Не указано')
+                    )
+
+                    if verbose:
+                        print(metadata.to_readable())
+
+                        # Проверяем срок действия
+                        if not metadata.is_valid():
+                            print("⚠️  ВНИМАНИЕ: Срок действия подписи ИСТЁК!")
+                        else:
+                            print("✅ Срок действия подписи актуален")
+
+            except Exception as e:
+                if verbose:
+                    print(f"⚠️ Не удалось распарсить метаданные: {e}")
+        else:
+            actual_data = data
+            if verbose:
+                print("⚠️ Метаданные не найдены, проверяем только подпись")
+
+        # Проверяем подпись
+        result = self.verify(actual_data, r, s, Q, verbose)
+
+        return result, metadata
+
     def _hash_to_e(self, message: bytes) -> Tuple[int, str, int]:
         """
         Шаги 1-2 по ГОСТ:
@@ -555,16 +816,30 @@ class GOSTSignature:
 
         return e, h_bits, α
 
-    def generate_key_pair(self, seed: int = None) -> Tuple[int, Point]:
+    def generate_key_pair(self) -> Tuple[int, Point]:
         """Генерация ключевой пары (d, Q)"""
-        if seed is not None:
-            random.seed(seed)
-
         d = random.randint(1, self.q - 1)
         Q = d * self.P
 
         print(f"\n{'=' * 50}")
         print(f"ГЕНЕРАЦИЯ КЛЮЧЕЙ")
+        print(f"{'=' * 50}")
+        print(f"  Секретный ключ d = {d}")
+        print(f"  Открытый ключ Q = d·P = {Q}")
+
+        return d, Q
+
+    def set_lecture_keys(self) -> Tuple[int, Point]:
+        """
+        УСТАНОВКА КЛЮЧЕЙ ИЗ ЛЕКЦИИ (для проверки примера)
+
+        В лекции: d = 5, Q = 5·P = (50, 56)
+        """
+        d = 5
+        Q = d * self.P
+
+        print(f"\n{'=' * 50}")
+        print(f"ЛЕКЦИОННЫЕ КЛЮЧИ")
         print(f"{'=' * 50}")
         print(f"  Секретный ключ d = {d}")
         print(f"  Открытый ключ Q = d·P = {Q}")
@@ -654,11 +929,11 @@ class GOSTSignature:
 
         # Шаг 5: z₁ = s·v mod q
         z1 = (s * v) % self.q
-        # ПО СТАНДАРТУ: z₂ = (q - r) * v mod q
-        z2 = ((self.q - r) * v) % self.q
+        # ПО СТАНДАРТУ: z₂ = (- r) * v mod q
+        z2 = (- r * v) % self.q
         if verbose:
             print(f"\n  ШАГ 5: z₁ = s·v mod q = {z1}")
-            print(f"         z₂ = (q - r)·v mod q = ({self.q} - {r})·{v} mod {self.q} = {z2}")
+            print(f"         z₂ = (- r)·v mod q = (- {r})·{v} mod {self.q} = {z2}")
 
         # Шаг 6: C = z₁·P + z₂·Q, R = x_C mod q
         C = (z1 * self.P) + (z2 * Q)
