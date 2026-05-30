@@ -9,23 +9,24 @@ import random
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from dataclasses import dataclass
 from typing import Optional, Tuple
 
 # ============================================================================
 # МЕТАДАННЫЕ ПОДПИСИ (автор, дата, срок действия)
 # ============================================================================
 
+
 @dataclass
 class SignatureMetadata:
     """Метаданные подписи"""
+
     author: str  # автор подписи
     created_at: str  # дата и время создания
     expires_at: str  # срок действия (опционально)
     purpose: str  # назначение подписи (опционально)
 
     @classmethod
-    def create(cls, author: str, validity_days: int = 365) -> 'SignatureMetadata':
+    def create(cls, author: str, validity_days: int = 365) -> "SignatureMetadata":
         """Создает метаданные с текущей датой и сроком действия"""
         now = datetime.now()
         expires = now + timedelta(days=validity_days)
@@ -34,7 +35,7 @@ class SignatureMetadata:
             author=author,
             created_at=now.strftime("%Y-%m-%d %H:%M:%S"),
             expires_at=expires.strftime("%Y-%m-%d %H:%M:%S"),
-            purpose="Электронная цифровая подпись по ГОСТ Р 34.10-2012"
+            purpose="Электронная цифровая подпись по ГОСТ Р 34.10-2012",
         )
 
     def to_bytes(self) -> bytes:
@@ -44,7 +45,7 @@ class SignatureMetadata:
         data += f"EXPIRES:{self.expires_at}\n"
         data += f"PURPOSE:{self.purpose}\n"
         data += f"END_METADATA\n"
-        return data.encode('utf-8')
+        return data.encode("utf-8")
 
     def to_readable(self) -> str:
         """Возвращает читаемый вид метаданных (без псевдографики для совместимости)"""
@@ -183,17 +184,6 @@ class ModularArithmetic:
 
         print(f"\n  Результат: {base}^{k} mod {mod} = {result}")
         return result
-    # @staticmethod
-    # def mod_pow(base: int, exp: int, mod: int) -> int:
-    #     """Быстрое возведение в степень по модулю"""
-    #     result = 1
-    #     base = base % mod
-    #     while exp > 0:
-    #         if exp & 1:
-    #             result = (result * base) % mod
-    #         base = (base * base) % mod
-    #         exp >>= 1
-    #     return result
 
     @staticmethod
     def is_prime(n: int, k: int = 40) -> bool:
@@ -286,15 +276,15 @@ class HasseTheorem:
         sqrt_p = math.sqrt(p)
 
         return {
-            'p': p,
-            'sqrt_p': sqrt_p,
-            '2_sqrt_p': 2 * sqrt_p,
-            'min_m': min_m,
-            'max_m': max_m,
-            'actual_m': m,
-            'is_valid': min_m <= m <= max_m,
-            'formula': f"{p}+1-2√{p} ≤ m ≤ {p}+1+2√{p}",
-            'range': f"[{min_m}, {max_m}]"
+            "p": p,
+            "sqrt_p": sqrt_p,
+            "2_sqrt_p": 2 * sqrt_p,
+            "min_m": min_m,
+            "max_m": max_m,
+            "actual_m": m,
+            "is_valid": min_m <= m <= max_m,
+            "formula": f"{p}+1-2√{p} ≤ m ≤ {p}+1+2√{p}",
+            "range": f"[{min_m}, {max_m}]",
         }
 
 
@@ -316,12 +306,12 @@ class BinaryVector:
     @staticmethod
     def bytes_to_int(data: bytes) -> int:
         """Преобразует байтовый хэш в целое число"""
-        return int.from_bytes(data, 'little')
+        return int.from_bytes(data, "little")
 
     @staticmethod
     def int_to_bytes(n: int, length: int) -> bytes:
         """Преобразует целое число в байты"""
-        return n.to_bytes(length, 'little')
+        return n.to_bytes(length, "little")
 
     @staticmethod
     def concat(r_bits: str, s_bits: str) -> str:
@@ -334,8 +324,6 @@ class BinaryVector:
 Содержит: точку на кривой, сложение, удвоение, умножение,
           вычисление порядка группы, поиск базовой точки
 """
-
-
 
 
 class Point:
@@ -378,7 +366,7 @@ class Point:
         if self.inf:
             return True
         left = (self.y * self.y) % self.p
-        right = (self.x ** 3 + self.a * self.x + self.b) % self.p
+        right = (self.x**3 + self.a * self.x + self.b) % self.p
         return left == right
 
     def __add__(self, other):
@@ -470,7 +458,7 @@ class EllipticCurve:
         self.b = b % p
 
         # Проверка дискриминанта
-        discriminant = (4 * a ** 3 + 27 * b ** 2) % p
+        discriminant = (4 * a**3 + 27 * b**2) % p
         if discriminant == 0:
             raise ValueError(f"Кривая вырождена: Δ = {discriminant} = 0")
 
@@ -485,7 +473,7 @@ class EllipticCurve:
         """
         points = [Point.infinity(self.a, self.b, self.p)]
         for x in range(self.p):
-            right = (x ** 3 + self.a * x + self.b) % self.p
+            right = (x**3 + self.a * x + self.b) % self.p
             for y in range(self.p):
                 if (y * y) % self.p == right:
                     points.append(Point(x, y, self.a, self.b, self.p))
@@ -537,9 +525,9 @@ class EllipticCurve:
         for q in sorted(set(factors), reverse=True):
             if ModularArithmetic.is_prime(q):
                 # Проверка по ГОСТ (только для больших чисел)
-                if 2 ** 254 < q < 2 ** 256:
+                if 2**254 < q < 2**256:
                     print(f"q = {q} (256-битный диапазон) ✅")
-                elif 2 ** 508 < q < 2 ** 512:
+                elif 2**508 < q < 2**512:
                     print(f"q = {q} (512-битный диапазон) ✅")
                 else:
                     print(f"q = {q} (вне ГОСТ-диапазона, учебный пример)")
@@ -626,7 +614,7 @@ class Streebog:
             )
 
     def hash_to_int(self, message: bytes) -> int:
-        return int.from_bytes(self.hash(message), 'little')
+        return int.from_bytes(self.hash(message), "little")
 
     def hash_to_bits(self, message: bytes) -> str:
         return bin(self.hash_to_int(message))[2:].zfill(self.digest_size)
@@ -645,8 +633,6 @@ import random
 from typing import Tuple
 
 
-
-
 class GOSTSignature:
     """
     Реализация ГОСТ Р 34.10-2012
@@ -655,8 +641,17 @@ class GOSTSignature:
     Алгоритм II: Проверка подписи (раздел 6.2)
     """
 
-    def __init__(self, p: int, a: int, b: int, hash_len: int = 256,
-                 auto_params: bool = True, q: int = None, Px: int = None, Py: int = None):
+    def __init__(
+        self,
+        p: int,
+        a: int,
+        b: int,
+        hash_len: int = 256,
+        auto_params: bool = True,
+        q: int = None,
+        Px: int = None,
+        Py: int = None,
+    ):
         """
         Инициализация схемы подписи
 
@@ -702,8 +697,14 @@ class GOSTSignature:
         print(f"  Длина хэша: {hash_len} бит")
         print(f"  Длина подписи: {self.component_bits * 2} бит")
 
-    def sign_with_metadata(self, data: bytes, d: int, author: str,
-                           validity_days: int = 365, verbose: bool = True) -> Tuple[int, int, SignatureMetadata]:
+    def sign_with_metadata(
+        self,
+        data: bytes,
+        d: int,
+        author: str,
+        validity_days: int = 365,
+        verbose: bool = True,
+    ) -> Tuple[int, int, SignatureMetadata]:
         """
         Формирование подписи с метаданными (автор, дата, срок действия)
 
@@ -734,8 +735,9 @@ class GOSTSignature:
 
         return r, s, metadata
 
-    def verify_with_metadata(self, data: bytes, r: int, s: int, Q: Point,
-                             verbose: bool = True) -> Tuple[bool, Optional[SignatureMetadata]]:
+    def verify_with_metadata(
+        self, data: bytes, r: int, s: int, Q: Point, verbose: bool = True
+    ) -> Tuple[bool, Optional[SignatureMetadata]]:
         """
         Проверка подписи с извлечением метаданных
 
@@ -756,19 +758,19 @@ class GOSTSignature:
 
             # Парсим метаданные
             try:
-                meta_str = metadata_part.decode('utf-8')
+                meta_str = metadata_part.decode("utf-8")
                 meta_dict = {}
-                for line in meta_str.strip().split('\n'):
-                    if ':' in line:
-                        key, value = line.split(':', 1)
+                for line in meta_str.strip().split("\n"):
+                    if ":" in line:
+                        key, value = line.split(":", 1)
                         meta_dict[key.strip()] = value.strip()
 
-                if 'AUTHOR' in meta_dict:
+                if "AUTHOR" in meta_dict:
                     metadata = SignatureMetadata(
-                        author=meta_dict.get('AUTHOR', 'Unknown'),
-                        created_at=meta_dict.get('CREATED', 'Unknown'),
-                        expires_at=meta_dict.get('EXPIRES', 'Unknown'),
-                        purpose=meta_dict.get('PURPOSE', 'Не указано')
+                        author=meta_dict.get("AUTHOR", "Unknown"),
+                        created_at=meta_dict.get("CREATED", "Unknown"),
+                        expires_at=meta_dict.get("EXPIRES", "Unknown"),
+                        purpose=meta_dict.get("PURPOSE", "Не указано"),
                     )
 
                     if verbose:
@@ -846,7 +848,9 @@ class GOSTSignature:
 
         return d, Q
 
-    def sign(self, message: bytes, d: int, verbose: bool = True) -> Tuple[int, int, str, str, str]:
+    def sign(
+        self, message: bytes, d: int, verbose: bool = True
+    ) -> Tuple[int, int, str, str, str]:
         """
         АЛГОРИТМ I: Формирование подписи (раздел 6.1)
 
@@ -881,7 +885,9 @@ class GOSTSignature:
                 print(f"\n  k = {k}")
                 print(f"  C = k·P = {C}")
                 print(f"  r = {r}")
-                print(f"  s = (r·d + k·e) mod q = ({r}·{d} + {k}·{e}) mod {self.q} = {s}")
+                print(
+                    f"  s = (r·d + k·e) mod q = ({r}·{d} + {k}·{e}) mod {self.q} = {s}"
+                )
 
             break
 
@@ -897,7 +903,9 @@ class GOSTSignature:
 
         return r, s, r_bits, s_bits, signature_bits
 
-    def verify(self, message: bytes, r: int, s: int, Q: Point, verbose: bool = True) -> bool:
+    def verify(
+        self, message: bytes, r: int, s: int, Q: Point, verbose: bool = True
+    ) -> bool:
         """
         АЛГОРИТМ II: Проверка подписи (раздел 6.2)
 
@@ -930,7 +938,7 @@ class GOSTSignature:
         # Шаг 5: z₁ = s·v mod q
         z1 = (s * v) % self.q
         # ПО СТАНДАРТУ: z₂ = (- r) * v mod q
-        z2 = (- r * v) % self.q
+        z2 = (-r * v) % self.q
         if verbose:
             print(f"\n  ШАГ 5: z₁ = s·v mod q = {z1}")
             print(f"         z₂ = (- r)·v mod q = (- {r})·{v} mod {self.q} = {z2}")
@@ -950,7 +958,7 @@ class GOSTSignature:
             print(f"         R = x_C mod q = {R}")
 
         # Шаг 7: Сравнение
-        result = (R == r)
+        result = R == r
         if verbose:
             print(f"\n  ШАГ 7: R == r? {result}")
 
@@ -959,12 +967,11 @@ class GOSTSignature:
     def signature_to_bytes(self, r: int, s: int) -> bytes:
         """Конвертирует подпись в байты"""
         byte_len = (self.component_bits + 7) // 8
-        return r.to_bytes(byte_len, 'big') + s.to_bytes(byte_len, 'big')
+        return r.to_bytes(byte_len, "big") + s.to_bytes(byte_len, "big")
 
     def signature_from_bytes(self, data: bytes) -> Tuple[int, int]:
         """Загружает подпись из байт"""
         byte_len = (self.component_bits + 7) // 8
-        r = int.from_bytes(data[:byte_len], 'big')
-        s = int.from_bytes(data[byte_len:], 'big')
+        r = int.from_bytes(data[:byte_len], "big")
+        s = int.from_bytes(data[byte_len:], "big")
         return r, s
-

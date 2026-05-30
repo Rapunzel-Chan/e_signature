@@ -9,24 +9,29 @@
 5. Интеграционные тесты
 """
 
-import unittest
-import random
 import os
-import tempfile
+import random
 import sys
+import tempfile
+import unittest
 
 # Добавляем путь к модулям
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from simple_code import (
-    ModularArithmetic, HasseTheorem, BinaryVector,
-    Point, EllipticCurve, Streebog, GOSTSignature
+    BinaryVector,
+    EllipticCurve,
+    GOSTSignature,
+    HasseTheorem,
+    ModularArithmetic,
+    Point,
+    Streebog,
 )
-
 
 # ============================================================================
 # ТЕСТ 1: МОДУЛЬНАЯ АРИФМЕТИКА
 # ============================================================================
+
 
 class TestModularArithmetic(unittest.TestCase):
     """Тесты для класса ModularArithmetic"""
@@ -80,6 +85,7 @@ class TestModularArithmetic(unittest.TestCase):
 # ТЕСТ 2: ТЕОРЕМА ХАССЕ
 # ============================================================================
 
+
 class TestHasseTheorem(unittest.TestCase):
     """Тесты для теоремы Хассе"""
 
@@ -101,14 +107,15 @@ class TestHasseTheorem(unittest.TestCase):
     def test_verify_curve(self):
         """Тест проверки кривой"""
         result = HasseTheorem.verify_curve(97, 94)
-        self.assertEqual(result['p'], 97)
-        self.assertEqual(result['actual_m'], 94)
-        self.assertTrue(result['is_valid'])
+        self.assertEqual(result["p"], 97)
+        self.assertEqual(result["actual_m"], 94)
+        self.assertTrue(result["is_valid"])
 
 
 # ============================================================================
 # ТЕСТ 3: ДВОИЧНЫЕ ВЕКТОРЫ
 # ============================================================================
+
 
 class TestBinaryVector(unittest.TestCase):
     """Тесты для работы с двоичными векторами"""
@@ -138,6 +145,7 @@ class TestBinaryVector(unittest.TestCase):
 # ============================================================================
 # ТЕСТ 4: ТОЧКА НА ЭЛЛИПТИЧЕСКОЙ КРИВОЙ
 # ============================================================================
+
 
 class TestPoint(unittest.TestCase):
     """Тесты для точки на эллиптической кривой"""
@@ -193,6 +201,7 @@ class TestPoint(unittest.TestCase):
 # ТЕСТ 5: ЭЛЛИПТИЧЕСКАЯ КРИВАЯ
 # ============================================================================
 
+
 class TestEllipticCurve(unittest.TestCase):
     """Тесты для эллиптической кривой"""
 
@@ -234,6 +243,7 @@ class TestEllipticCurve(unittest.TestCase):
 # ТЕСТ 6: ХЭШ-ФУНКЦИЯ STREEBOG
 # ============================================================================
 
+
 class TestStreebog(unittest.TestCase):
     """Тесты для хэш-функции Streebog"""
 
@@ -268,6 +278,7 @@ class TestStreebog(unittest.TestCase):
 # ============================================================================
 # ТЕСТ 7: ФОРМИРОВАНИЕ И ПРОВЕРКА ПОДПИСИ
 # ============================================================================
+
 
 class TestGOSTSignature(unittest.TestCase):
     """Тесты для основной реализации подписи с auto_params=True"""
@@ -344,12 +355,12 @@ class TestGOSTSignature(unittest.TestCase):
 # ТЕСТ 8: ПРОВЕРКА ПРИМЕРА ИЗ ЛЕКЦИИ (фиксированные параметры)
 # ============================================================================
 
+
 class TestLectureExample(unittest.TestCase):
     """Тест примера из лекции с фиксированными параметрами"""
 
     def setUp(self):
-        self.gost = GOSTSignature(97, 9, 3, 256,
-                                  auto_params=False, q=47, Px=89, Py=1)
+        self.gost = GOSTSignature(97, 9, 3, 256, auto_params=False, q=47, Px=89, Py=1)
 
     def test_lecture_example_sign(self):
         """Тест примера из лекции: d=5, k=18, e=42 → r=12, s=17"""
@@ -390,6 +401,7 @@ class TestLectureExample(unittest.TestCase):
 # ТЕСТ 9: РАЗНЫЕ КРИВЫЕ
 # ============================================================================
 
+
 class TestDifferentCurves(unittest.TestCase):
     """Тесты с разными параметрами кривых"""
 
@@ -417,6 +429,7 @@ class TestDifferentCurves(unittest.TestCase):
 # ТЕСТ 10: ИНТЕГРАЦИОННЫЕ ТЕСТЫ
 # ============================================================================
 
+
 class TestIntegration(unittest.TestCase):
     """Интеграционные тесты"""
 
@@ -425,24 +438,24 @@ class TestIntegration(unittest.TestCase):
 
     def test_full_cycle_with_file(self):
         """Полный цикл: создание файла → подпись → проверка"""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("This is a test document for GOST signature.")
             temp_file = f.name
 
         random.seed(42)
         d, Q = self.gost.generate_key_pair()
 
-        with open(temp_file, 'rb') as f:
+        with open(temp_file, "rb") as f:
             data = f.read()
 
         r, s, _, _, _ = self.gost.sign(data, d, verbose=False)
 
-        with open(temp_file + ".sig", 'wb') as f:
+        with open(temp_file + ".sig", "wb") as f:
             f.write(self.gost.signature_to_bytes(r, s))
 
-        with open(temp_file, 'rb') as f:
+        with open(temp_file, "rb") as f:
             data = f.read()
-        with open(temp_file + ".sig", 'rb') as f:
+        with open(temp_file + ".sig", "rb") as f:
             sig_data = f.read()
 
         r_loaded, s_loaded = self.gost.signature_from_bytes(sig_data)
@@ -454,22 +467,22 @@ class TestIntegration(unittest.TestCase):
 
     def test_modified_file_fails(self):
         """Изменённый файл не проходит проверку"""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("Original content")
             temp_file = f.name
 
         random.seed(42)
         d, Q = self.gost.generate_key_pair()
 
-        with open(temp_file, 'rb') as f:
+        with open(temp_file, "rb") as f:
             data = f.read()
 
         r, s, _, _, _ = self.gost.sign(data, d, verbose=False)
 
-        with open(temp_file, 'w') as f:
+        with open(temp_file, "w") as f:
             f.write("Modified content!!!")
 
-        with open(temp_file, 'rb') as f:
+        with open(temp_file, "rb") as f:
             modified_data = f.read()
 
         result = self.gost.verify(modified_data, r, s, Q, verbose=False)
@@ -481,6 +494,7 @@ class TestIntegration(unittest.TestCase):
 # ============================================================================
 # ТЕСТ 11: КРАЕВЫЕ СЛУЧАИ
 # ============================================================================
+
 
 class TestEdgeCases(unittest.TestCase):
     """Тесты краевых случаев"""
@@ -525,6 +539,7 @@ class TestEdgeCases(unittest.TestCase):
 # ТЕСТ 12: ПРОВЕРКА ТЕОРЕМЫ ХАССЕ ДЛЯ РАЗНЫХ КРИВЫХ
 # ============================================================================
 
+
 class TestHasseForCurves(unittest.TestCase):
     """Проверка теоремы Хассе для разных кривых"""
 
@@ -557,8 +572,233 @@ class TestHasseForCurves(unittest.TestCase):
 
 
 # ============================================================================
+# ТЕСТ 13: КОНТРОЛЬНЫЕ ПРИМЕРЫ ИЗ ГОСТ Р 34.10-2012 (ПРИЛОЖЕНИЕ А)
+# ============================================================================
+
+
+class TestGostAppendixA(unittest.TestCase):
+    """
+    Тестирование по контрольным примерам из ГОСТ Р 34.10-2012
+    Приложение А (справочное), стр. 10-14
+    """
+
+    # ========================================================================
+    # ПРИМЕР 1 (256-битная кривая)
+    # ========================================================================
+
+    # Параметры кривой из примера 1
+    P1 = {
+        "p": 57896044618658097711785492504343953926634992332820282019728792003956564821041,
+        "a": 7,
+        "b": 43308876546767276905765904595650931995942111794451039583252968842033849580414,
+        "q": 57896044618658097711785492504343953927082934583725450622380973592137631069619,
+        "m": 57896044618658097711785492504343953927082934583725450622380973592137631069619,
+        "Px": 2,
+        "Py": 4018974056539037503335449422937059775635739389905545080690979365213431566280,
+        "d": 55441196065363246126355624130324183196576709222340016572108097750006097525544,
+        "Qx": 57520216126176808443631405023338071176630104906313632182896741342206604859403,
+        "Qy": 17614944419213781543809391949654080031942662045363639260709847859438286763994,
+        "name": "Пример 1 (256-битная кривая)",
+    }
+
+    # Параметры для подписи из примера 1
+    SIGN1 = {
+        "e": 20798893674476452017134061561508270130637142515379653289952617252661468872421,
+        "k": 53854137677348463731403841147996619241504003434302020712960838528893196233395,
+        "Cx": 29700980915817952874371204983938256990422752107994319651632687982059210933395,
+        "Cy": 32842535278684663477094665322517084506804721032454543268132854556539274060910,
+        "r": 29700980915817952874371204983938256990422752107994319651632687982059210933395,
+        "s": 574973400270084654178925310019147038455227042649098563933718999175515839552,
+        "name": "Подпись из примера 1",
+    }
+
+    def test_example1_curve_parameters(self):
+        """Тест 1.1: Проверка параметров кривой из примера 1"""
+        params = self.P1
+
+        # Создаём кривую с ручными параметрами
+        gost = GOSTSignature(
+            params["p"],
+            params["a"],
+            params["b"],
+            256,
+            auto_params=False,
+            q=params["q"],
+            Px=params["Px"],
+            Py=params["Py"],
+        )
+
+        # Проверка, что базовая точка лежит на кривой
+        self.assertTrue(gost.P.on_curve(), "Точка P не лежит на кривой")
+
+        # Проверка, что q·P = O
+        qP = params["q"] * gost.P
+        self.assertTrue(qP.is_infinity(), f"q·P = {qP} ≠ O")
+
+        # Проверка дискриминанта
+        disc = (4 * params["a"] ** 3 + 27 * params["b"] ** 2) % params["p"]
+        self.assertNotEqual(disc, 0, "Дискриминант равен 0 (кривая вырождена)")
+
+    def test_example1_keys(self):
+        """Тест 1.2: Проверка ключей из примера 1"""
+        params = self.P1
+
+        gost = GOSTSignature(
+            params["p"],
+            params["a"],
+            params["b"],
+            256,
+            auto_params=False,
+            q=params["q"],
+            Px=params["Px"],
+            Py=params["Py"],
+        )
+
+        # Проверка, что Q = d·P
+        d = params["d"]
+        Q_calculated = d * gost.P
+        Q_expected = Point(
+            params["Qx"], params["Qy"], params["a"], params["b"], params["p"]
+        )
+
+        self.assertEqual(
+            Q_calculated.x,
+            Q_expected.x,
+            f"Q.x не совпадает: вычислено {Q_calculated.x}, ожидалось {Q_expected.x}",
+        )
+        self.assertEqual(
+            Q_calculated.y,
+            Q_expected.y,
+            f"Q.y не совпадает: вычислено {Q_calculated.y}, ожидалось {Q_expected.y}",
+        )
+
+    def test_example1_signature(self):
+        """Тест 1.3: Проверка формирования подписи из примера 1"""
+        params = self.P1
+        sign = self.SIGN1
+
+        gost = GOSTSignature(
+            params["p"],
+            params["a"],
+            params["b"],
+            256,
+            auto_params=False,
+            q=params["q"],
+            Px=params["Px"],
+            Py=params["Py"],
+        )
+
+        # Используем фиксированные значения из примера
+        d = params["d"]
+        k = sign["k"]
+        e = sign["e"]
+
+        # Вычисляем C = k·P
+        C = k * gost.P
+
+        # Проверяем координаты C
+        self.assertEqual(
+            C.x,
+            sign["Cx"],
+            f"C.x не совпадает: вычислено {C.x}, ожидалось {sign['Cx']}",
+        )
+        self.assertEqual(
+            C.y,
+            sign["Cy"],
+            f"C.y не совпадает: вычислено {C.y}, ожидалось {sign['Cy']}",
+        )
+
+        # Вычисляем r = x_C mod q
+        r = C.x % gost.q
+        self.assertEqual(
+            r, sign["r"], f"r не совпадает: вычислено {r}, ожидалось {sign['r']}"
+        )
+
+        # Вычисляем s = (r·d + k·e) mod q
+        s = (r * d + k * e) % gost.q
+        self.assertEqual(
+            s, sign["s"], f"s не совпадает: вычислено {s}, ожидалось {sign['s']}"
+        )
+
+    def test_example1_verification(self):
+        """Тест 1.4: Проверка проверки подписи из примера 1"""
+        params = self.P1
+        sign = self.SIGN1
+
+        gost = GOSTSignature(
+            params["p"],
+            params["a"],
+            params["b"],
+            256,
+            auto_params=False,
+            q=params["q"],
+            Px=params["Px"],
+            Py=params["Py"],
+        )
+
+        # Открытый ключ из примера
+        Q = Point(params["Qx"], params["Qy"], params["a"], params["b"], params["p"])
+
+        # Подпись из примера
+        r = sign["r"]
+        s = sign["s"]
+        e = sign["e"]
+
+        # Шаг 4: v = e⁻¹ mod q
+        v = ModularArithmetic.modinv(e, gost.q)
+
+        # Шаг 5: z₁ = s·v mod q, z₂ = -r·v mod q
+        z1 = (s * v) % gost.q
+        z2 = (-r * v) % gost.q
+
+        # Шаг 6: C = z₁·P + z₂·Q
+        C = (z1 * gost.P) + (z2 * Q)
+
+        # Шаг 7: R = x_C mod q
+        R = C.x % gost.q
+
+        # Проверка: R должно равняться r
+        self.assertEqual(R, r, f"R = {R} ≠ r = {r}")
+
+        # Проверка через метод verify
+        # Для этого нужно создать сообщение с соответствующим хэшем e
+        # В реальном тесте нужно подобрать сообщение, дающее такой e
+        # Или использовать verify с переданным e
+
+    def test_example1_full_cycle(self):
+        """Тест 1.5: Полный цикл с ключами из примера 1"""
+        params = self.P1
+
+        gost = GOSTSignature(
+            params["p"],
+            params["a"],
+            params["b"],
+            256,
+            auto_params=False,
+            q=params["q"],
+            Px=params["Px"],
+            Py=params["Py"],
+        )
+
+        # Используем ключи из примера
+        d = params["d"]
+        Q = Point(params["Qx"], params["Qy"], params["a"], params["b"], params["p"])
+
+        # Создаём тестовое сообщение
+        message = b"Test message for GOST signature verification"
+
+        # Подписываем
+        r, s, _, _, _ = gost.sign(message, d, verbose=False)
+
+        # Проверяем
+        result = gost.verify(message, r, s, Q, verbose=False)
+        self.assertTrue(result, "Подпись не прошла проверку")
+
+
+# ============================================================================
 # ЗАПУСК ТЕСТОВ
 # ============================================================================
+
 
 def run_tests():
     print("\n" + "=" * 70)
@@ -580,6 +820,8 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
     suite.addTests(loader.loadTestsFromTestCase(TestEdgeCases))
     suite.addTests(loader.loadTestsFromTestCase(TestHasseForCurves))
+    # Добавить в функцию run_tests()
+    suite.addTests(loader.loadTestsFromTestCase(TestGostAppendixA))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
